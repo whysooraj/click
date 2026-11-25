@@ -3403,12 +3403,22 @@ class Option(Parameter):
 
     def get_error_hint(self, ctx: Context | None) -> str:
         result = super().get_error_hint(ctx)
-        if self.show_envvar and self.envvar:
-            envvars = [self.envvar] if isinstance(self.envvar, str) else self.envvar
-            # An environment variable is allowed to feature a space or a comma on all
-            # platforms, hence the quotes around each.
-            var_str = ", ".join(f"'{var}'" for var in envvars)
-            result += f" (env var: {var_str})"
+        if self.show_envvar:
+            envvar = self.envvar
+            if not envvar and (
+                ctx is not None
+                and self.allow_from_autoenv
+                and ctx.auto_envvar_prefix is not None
+                and self.name
+            ):
+                envvar = f"{ctx.auto_envvar_prefix}_{self.name.upper()}"
+
+            if envvar:
+                envvars = [envvar] if isinstance(envvar, str) else envvar
+                # An environment variable is allowed to feature a space or
+                # a comma on all platforms, hence the quotes around each.
+                var_str = ", ".join(f"'{var}'" for var in envvars)
+                result += f" (env var: {var_str})"
         return result
 
     def _check_name_is_normalized(self, name: str, decls: cabc.Sequence[str]) -> None:
